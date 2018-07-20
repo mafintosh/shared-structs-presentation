@@ -1,0 +1,16 @@
+{
+  "name": "buffer-cast",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "napi-macros": "^1.4.0",
+    "node-gyp-build": "^3.4.0",
+    "shared-structs": "^1.3.2"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "shared-structs-and-workers",
+  "version": "0.0.0",
+  "description": "Using shared-structs with Workers <3",
+  "main": "main.js",
+  "scripts": {
+    "start": "node --experimental-worker main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gist.github.com/8f5d3076a1afd599cbd9bd5289595179.git"
+  },
+  "author": "Mathias Buus (@mafintosh)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://gist.github.com/8f5d3076a1afd599cbd9bd5289595179"
+  },
+  "homepage": "https://gist.github.com/8f5d3076a1afd599cbd9bd5289595179",
+  "dependencies": {
+    "shared-structs": "^1.3.2"
+  }
+}

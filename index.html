@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' />
+  <title>Big</title>
+  <link href='big.css' rel='stylesheet' type='text/css' />
+  <link href='highlight.css' rel='stylesheet' type='text/css' />
+  <style>
+    .new-shiny { background: #aaaaaa; }
+  </style>
+  <script src='big.js'></script>
+  <script src='highlight.js'></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body class='light'>
+  <div>shared-structs</div>
+  <div>How to share data structures between <em>workers</em>, <em>node</em>, and <em>c</em>/<em>c++</em> with 0 hassle</div>
+  <div>
+    What are structs?
+  </div>
+  <div>
+    <pre>
+struct <em>data</em> {
+  char <em>buf</em>[1024];
+  uint32_t <em>buf_len</em>;
+}
+</pre>
+  </div>
+  <div>
+    Structs are like a low level data schema you can
+    <em>cast</em> data to.
+  </div>
+  <div>
+    They basically just define <em>offsets</em> where properties start and end
+  </div>
+  <div>
+    <pre>
+<em>// allocate a struct on the heap as a buffer</em>
+char *ptr = malloc(sizeof(struct data));
+
+<em>// zero cost cast to the struct</em>
+struct data *data_ptr = (struct data *) ptr;
+    </pre>
+  </div>
+  <div>
+    When writing native modules you can even cast Node.js Buffers to structs
+  </div>
+  <div>
+    <pre>
+napi_value do_stuff (napi_env env, napi_callback_info info) {
+  napi_value argv[1];
+  size_t argc = 1;
+  napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+
+  <em>// the magic
+  struct data *ptr;
+  size_t data_size;
+
+  napi_get_buffer_info(env, argv[0], (void **) &ptr, &data_size);</em>
+}
+    </pre>
+  </div>
+  <div>
+    To make this less boilerplate-y I wrote napi-macros on npm
+  </div>
+  <div>
+    <pre>
+#include &lt;node_api.h&gt;
+#include &lt;napi-macros.h&gt;
+
+NAPI_METHOD(do_stuff) {
+  NAPI_ARGV(1)
+  NAPI_BUFFER_CAST_ARGV(<em>struct data *</em>, ptr, 0)
+}
+    </pre>
+  </div>
+  <div>
+    (<em>demo</em>)
+  </div>
+  <div>
+    This is a powerful pattern as it allows you to <em>manage
+    memory in JS</em> which in practice is a lot easier when writing native code
+  </div>
+  <div>
+    Notice how we only had the <em>raw buffer</em> in JS?
+  </div>
+  <div>
+    What if we could <em>read data</em> out of the struct in JS as well?
+  </div>
+  <div>
+    Again structs are <em>just offsets</em> and their behaivor is actually <em>well defined</em>
+  </div>
+  <div>
+    <pre>
+sizeof(uint32_t) == 4
+sizeof(uint16_t) == 2
+    </pre>
+  </div>
+  <div>
+    The offsets <em>*have*</em> to align to the type
+  </div>
+  <div>
+    I.e. the offset of a 32 bit integer is <em>*always*</em> a factor of 4
+  </div>
+  <div>
+    <pre>
+struct test {
+  char a;    <em>// offset 0, size 1</em>
+  int32_t b; <em>// offset 4, size 4</em>
+  char c;    <em>// offset 8; size 1</em>
+  int64_t d; <em>// offset 16; size 8</em>
+};
+    </pre>
+  </div>
+  <div>
+    The alignment of the struct itself is the <em>alignment
+    of the largest primitive type</em> stored
+  </div>
+  <div>
+    I.e. if the struct has a <em>int64_t</em> the alignment is <em>8</em>
+  </div>
+  <div>
+    When encoding/decoding values you have to use the endianess of the host machine
+  </div>
+  <div>
+    Luckily TypedArrays in JS does exactly that!
+  </div>
+  <div>
+    The <em>shared-structs</em> module is a struct parser that allows us to "cast" buffers to structs in JS and read and write to them.
+  </div>
+  <div>
+    All structs in the JS are code generated and uses TypedArrays behind the scenes to make the view of the data.
+  </div>
+  <div>
+    <span style="white-space: nowrap;">npm install <em>shared-structs</em></span>
+  </div>
+  <div>
+    <pre>
+const sharedStructs = require('shared-structs')
+
+const structs = sharedStructs(<em>`
+  struct stuff {
+    int ticks;
+  };
+`</em>)
+
+const s = structs.stuff()
+s.tick = 42
+    </pre>
+  </div>
+  <div>
+    The entire struct is just a "view" on the buffer stored in <em>s.rawBuffer</em>
+  </div>
+  <div>
+    <pre>
+console.log(s.rawBuffer)
+s.tick = 42
+console.log(s.rawBuffer)
+    </pre>
+  </div>
+  <div>
+    <em>s.rawBuffer</em> is always a valid c struct that can be parsed in c/c++ with the same struct
+  </div>
+  <div>
+    (<em>demo</em>)
+  </div>
+  <div>
+    You can also use structs to <em>transfer structured data between Node.js workers</em> without
+    having to copy it.
+  </div>
+  <div>
+    (<em>demo</em>)
+  </div>
+  <div>
+    It also supports <em>multidimensional arrays</em>, <em>nested structs</em>, <em>defines</em>, <em>typedefs</em> and more.
+  </div>
+</body>
+</html>
